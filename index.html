@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard CDT Colombia 2026</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3; }
+  .header { background: linear-gradient(135deg, #1a2332 0%, #0d6efd 100%); padding: 30px; text-align: center; }
+  .header h1 { font-size: 2.2rem; color: #fff; margin-bottom: 8px; }
+  .header p { color: #adb5bd; font-size: 1rem; }
+  .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 20px; text-align: center; }
+  .card .label { font-size: 0.85rem; color: #8b949e; margin-bottom: 8px; }
+  .card .value { font-size: 1.8rem; font-weight: bold; color: #58a6ff; }
+  .card .sub { font-size: 0.75rem; color: #8b949e; margin-top: 4px; }
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
+  .chart-box { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 20px; }
+  .chart-box.full { grid-column: 1 / -1; }
+  .chart-box h3 { color: #58a6ff; font-size: 1rem; margin-bottom: 16px; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
+  .sim-box { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 24px; margin-bottom: 28px; }
+  .sim-box h3 { color: #58a6ff; font-size: 1.1rem; margin-bottom: 20px; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
+  .sim-controls { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
+  .sim-controls label { color: #8b949e; font-size: 0.9rem; margin-bottom: 4px; display: block; }
+  .sim-controls input, .sim-controls select { background: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 8px; padding: 8px 12px; font-size: 1rem; width: 200px; }
+  .sim-controls input:focus, .sim-controls select:focus { outline: none; border-color: #58a6ff; }
+  .sim-btn { background: #0d6efd; color: #fff; border: none; border-radius: 8px; padding: 10px 24px; font-size: 1rem; cursor: pointer; align-self: flex-end; }
+  .sim-btn:hover { background: #0b5ed7; }
+  .sim-results { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+  .sim-result-card { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 16px; text-align: center; transition: transform 0.2s; }
+  .sim-result-card:hover { transform: translateY(-3px); border-color: #58a6ff; }
+  .sim-result-card .bank { font-size: 0.8rem; color: #8b949e; margin-bottom: 6px; }
+  .sim-result-card .ganancia { font-size: 1.3rem; font-weight: bold; color: #3fb950; }
+  .sim-result-card .total { font-size: 0.9rem; color: #e6edf3; margin-top: 4px; }
+  .sim-result-card .rate { font-size: 0.75rem; color: #8b949e; margin-top: 2px; }
+  .best { border-color: #f78166 !important; }
+  .best .bank { color: #f78166; }
+  .tabla-box { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 24px; margin-bottom: 28px; overflow-x: auto; }
+  .tabla-box h3 { color: #58a6ff; font-size: 1.1rem; margin-bottom: 16px; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #0d1117; color: #8b949e; font-size: 0.8rem; text-transform: uppercase; padding: 10px 12px; text-align: left; border-bottom: 1px solid #30363d; }
+  td { padding: 10px 12px; border-bottom: 1px solid #21262d; font-size: 0.9rem; }
+  tr:hover td { background: #1c2128; }
+  .badge { background: #0d6efd; color: #fff; border-radius: 4px; padding: 2px 8px; font-size: 0.75rem; }
+  .badge.best { background: #f78166; }
+  .nota { background: #1c2128; border-left: 3px solid #58a6ff; padding: 12px 16px; border-radius: 4px; font-size: 0.82rem; color: #8b949e; margin-bottom: 20px; }
+  footer { text-align: center; padding: 20px; color: #8b949e; font-size: 0.8rem; border-top: 1px solid #30363d; }
+  @media (max-width: 768px) { .charts-grid { grid-template-columns: 1fr; } .charts-grid .chart-box.full { grid-column: 1; } }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>📊 Dashboard CDT Colombia 2026</h1>
+  <p>Comparativo de Certificados de Depósito a Término • Tasas E.A. • Actualizado: Abril 2026</p>
+</div>
+
+<div class="container">
+  <div class="nota">
+    ℹ️ <strong>Nota:</strong> Las tasas mostradas son E.A. (Efectivo Anual) de referencia para CDTs a 360 días según información pública disponible a abril 2026. 
+    Las tasas pueden variar según el monto, plazo y negociación con cada entidad. Verifique siempre con la entidad financiera antes de invertir.
+  </div>
+
+  <div class="cards" id="statsCards"></div>
+
+  <div class="charts-grid">
+    <div class="chart-box full">
+      <h3>🏦 Comparativo Tasas CDT por Entidad — 2025 vs 2026 (E.A. % a 360 días)</h3>
+      <canvas id="chartComparativo" height="90"></canvas>
+    </div>
+    <div class="chart-box">
+      <h3>📈 Top 10 Mejores Tasas CDT 2026</h3>
+      <canvas id="chartTop10" height="200"></canvas>
+    </div>
+    <div class="chart-box">
+      <h3>🥧 Distribución por Tipo de Entidad</h3>
+      <canvas id="chartDistribucion" height="200"></canvas>
+    </div>
+    <div class="chart-box full">
+      <h3>📉 Proyección de Tasas CDT 2026–2027 (Escenarios)</h3>
+      <canvas id="chartProyeccion" height="80"></canvas>
+    </div>
+  </div>
+
+  <div class="sim-box">
+    <h3>💰 Simulador de Inversión — ¿Qué hubiera pasado con $1.000.000 COP?</h3>
+    <div class="sim-controls">
+      <div>
+        <label>Monto a invertir (COP)</label>
+        <input type="number" id="montoInput" value="1000000" min="100000" step="100000">
+      </div>
+      <div>
+        <label>Plazo</label>
+        <select id="plazoSelect">
+          <option value="30">30 días</option>
+          <option value="60">60 días</option>
+          <option value="90">90 días</option>
+          <option value="180">180 días</option>
+          <option value="360" selected>360 días</option>
+        </select>
+      </div>
+      <div>
+        <label>Año de referencia</label>
+        <select id="anioSelect">
+          <option value="2026" selected>2026</option>
+          <option value="2025">2025</option>
+        </select>
+      </div>
+      <button class="sim-btn" onclick="calcularSimulacion()">Calcular 📊</button>
+    </div>
+    <div class="sim-results" id="simResultados"></div>
+  </div>
+
+  <div class="tabla-box">
+    <h3>📋 Tabla Completa de Tasas CDT por Entidad</h3>
+    <table id="tablaCompleta">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Entidad</th>
+          <th>Tipo</th>
+          <th>Tasa 2025 E.A.</th>
+          <th>Tasa 2026 E.A.</th>
+          <th>Variación</th>
+          <th>Plazo Mín.</th>
+          <th>Monto Mín.</th>
+        </tr>
+      </thead>
+      <tbody id="tablaBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<footer>
+  Dashboard CDT Colombia 2026 • Datos de referencia con fines informativos • Thesleshart/dashboard-cdt-colombia
+</footer>
+
+<script>
+const entidades = [
+  { nombre: "Bancolombia",      tipo: "Banco",       tasa2025: 11.50, tasa2026: 9.80,  plazo: "30 días",  monto: "$500.000" },
+  { nombre: "Davivienda",       tipo: "Banco",       tasa2025: 11.80, tasa2026: 10.20, plazo: "30 días",  monto: "$500.000" },
+  { nombre: "Banco de Bogotá",  tipo: "Banco",       tasa2025: 11.20, tasa2026: 9.50,  plazo: "30 días",  monto: "$500.000" },
+  { nombre: "BBVA Colombia",    tipo: "Banco",       tasa2025: 10.90, tasa2026: 9.20,  plazo: "30 días",  monto: "$500.000" },
+  { nombre: "Banco Popular",    tipo: "Banco",       tasa2025: 11.40, tasa2026: 9.70,  plazo: "30 días",  monto: "$500.000" },
+  { nombre: "Itaú Colombia",    tipo: "Banco",       tasa2025: 10.80, tasa2026: 9.10,  plazo: "30 días",  monto: "$1.000.000" },
+  { nombre: "Scotiabank Colpatria", tipo: "Banco",   tasa2025: 11.00, tasa2026: 9.40, plazo: "30 días",  monto: "$500.000" },
+  { nombre: "Banco Agrario",    tipo: "Banco",       tasa2025: 12.00, tasa2026: 10.50, plazo: "30 días",  monto: "$100.000" },
+  { nombre: "Banco W",          tipo: "Banco",       tasa2025: 13.50, tasa2026: 12.00, plazo: "90 días",  monto: "$500.000" },
+  { nombre: "Banco Falabella",  tipo: "Banco",       tasa2025: 12.50, tasa2026: 11.00, plazo: "30 días",  monto: "$500.000" },
+  { nombre: "Nequi (Bancolombia)", tipo: "Digital",  tasa2025: 11.00, tasa2026: 9.50, plazo: "30 días",  monto: "$1.000" },
+  { nombre: "Nubank Colombia",  tipo: "Digital",     tasa2025: 12.00, tasa2026: 10.80, plazo: "1 día",   monto: "$1.000" },
+  { nombre: "Lulo Bank",        tipo: "Digital",     tasa2025: 13.00, tasa2026: 11.50, plazo: "1 día",   monto: "$1.000" },
+  { nombre: "Rappipay / Rappibank", tipo: "Digital", tasa2025: 12.80, tasa2026: 11.20, plazo: "1 día",  monto: "$1.000" },
+  { nombre: "Coltefinanciera",  tipo: "CFC",         tasa2025: 13.20, tasa2026: 11.80, plazo: "30 días", monto: "$500.000" },
+  { nombre: "Financiera Dann Regional", tipo: "CFC", tasa2025: 13.80, tasa2026: 12.50, plazo: "30 días", monto: "$500.000" },
+  { nombre: "Coopcentral",      tipo: "Cooperativa", tasa2025: 13.50, tasa2026: 12.00, plazo: "30 días", monto: "$200.000" },
+  { nombre: "JFK Cooperativa",  tipo: "Cooperativa", tasa2025: 14.00, tasa2026: 13.00, plazo: "30 días", monto: "$200.000" },
+  { nombre: "Confiar",          tipo: "Cooperativa", tasa2025: 13.70, tasa2026: 12.30, plazo: "30 días", monto: "$200.000" },
+  { nombre: "Cootrafa",         tipo: "Cooperativa", tasa2025: 13.90, tasa2026: 12.80, plazo: "30 días", monto: "$200.000" },
+];
+
+// Stats Cards
+const maxTasa = Math.max(...entidades.map(e => e.tasa2026));
+const minTasa = Math.min(...entidades.map(e => e.tasa2026));
+const avgTasa = (entidades.reduce((s, e) => s + e.tasa2026, 0) / entidades.length).toFixed(2);
+const bestBank = entidades.find(e => e.tasa2026 === maxTasa);
+const promedio2025 = (entidades.reduce((s, e) => s + e.tasa2025, 0) / entidades.length).toFixed(2);
+
+document.getElementById('statsCards').innerHTML = `
+  <div class="card"><div class="label">Mayor Tasa CDT 2026</div><div class="value">${maxTasa}%</div><div class="sub">${bestBank.nombre}</div></div>
+  <div class="card"><div class="label">Menor Tasa CDT 2026</div><div class="value">${minTasa}%</div><div class="sub">E.A. a 360 días</div></div>
+  <div class="card"><div class="label">Tasa Promedio 2026</div><div class="value">${avgTasa}%</div><div class="sub">E.A. entre ${entidades.length} entidades</div></div>
+  <div class="card"><div class="label">Tasa Promedio 2025</div><div class="value">${promedio2025}%</div><div class="sub">Referencia año anterior</div></div>
+  <div class="card"><div class="label">Entidades Analizadas</div><div class="value">${entidades.length}</div><div class="sub">Bancos, digitales y cooperativas</div></div>
+`;
+
+// Chart Comparativo 2025 vs 2026
+const ctxComp = document.getElementById('chartComparativo').getContext('2d');
+new Chart(ctxComp, {
+  type: 'bar',
+  data: {
+    labels: entidades.map(e => e.nombre),
+    datasets: [
+      { label: 'Tasa 2025 E.A.%', data: entidades.map(e => e.tasa2025), backgroundColor: 'rgba(88, 166, 255, 0.7)', borderColor: '#58a6ff', borderWidth: 1 },
+      { label: 'Tasa 2026 E.A.%', data: entidades.map(e => e.tasa2026), backgroundColor: 'rgba(63, 185, 80, 0.7)', borderColor: '#3fb950', borderWidth: 1 }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { labels: { color: '#e6edf3' } }, tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.raw + '%' } } },
+    scales: {
+      x: { ticks: { color: '#8b949e', maxRotation: 45 }, grid: { color: '#30363d' } },
+      y: { ticks: { color: '#8b949e', callback: v => v + '%' }, grid: { color: '#30363d' }, min: 6, max: 16 }
+    }
+  }
+});
+
+// Top 10 Chart
+const sorted = [...entidades].sort((a, b) => b.tasa2026 - a.tasa2026).slice(0, 10);
+const ctxTop = document.getElementById('chartTop10').getContext('2d');
+new Chart(ctxTop, {
+  type: 'bar',
+  data: {
+    labels: sorted.map(e => e.nombre),
+    datasets: [{ label: 'Tasa E.A.% 2026', data: sorted.map(e => e.tasa2026), backgroundColor: sorted.map((e,i) => i === 0 ? '#f78166' : 'rgba(63, 185, 80, 0.7)'), borderColor: sorted.map((e,i) => i === 0 ? '#f78166' : '#3fb950'), borderWidth: 1 }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.raw + '% E.A.' } } },
+    scales: {
+      x: { ticks: { color: '#8b949e', callback: v => v + '%' }, grid: { color: '#30363d' }, min: 8 },
+      y: { ticks: { color: '#e6edf3' }, grid: { color: '#30363d' } }
+    }
+  }
+});
+
+// Distribución pie chart
+const tipos = {};
+entidades.forEach(e => { tipos[e.tipo] = (tipos[e.tipo] || 0) + 1; });
+const ctxPie = document.getElementById('chartDistribucion').getContext('2d');
+new Chart(ctxPie, {
+  type: 'doughnut',
+  data: {
+    labels: Object.keys(tipos),
+    datasets: [{ data: Object.values(tipos), backgroundColor: ['#58a6ff', '#3fb950', '#f78166', '#d2a679'], borderColor: '#161b22', borderWidth: 3 }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { labels: { color: '#e6edf3' }, position: 'bottom' },
+      tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.raw + ' entidades' } }
+    }
+  }
+});
+
+// Proyección chart
+const meses = ['Abr 2026','May 2026','Jun 2026','Jul 2026','Ago 2026','Sep 2026','Oct 2026','Nov 2026','Dic 2026','Ene 2027','Feb 2027','Mar 2027'];
+const ctxProy = document.getElementById('chartProyeccion').getContext('2d');
+new Chart(ctxProy, {
+  type: 'line',
+  data: {
+    labels: meses,
+    datasets: [
+      { label: 'Escenario Base', data: [10.5, 10.3, 10.1, 9.9, 9.7, 9.5, 9.3, 9.1, 8.9, 8.7, 8.5, 8.3], borderColor: '#58a6ff', backgroundColor: 'rgba(88,166,255,0.1)', tension: 0.4, fill: true },
+      { label: 'Escenario Optimista (tasas bajan + rápido)', data: [10.5, 10.1, 9.7, 9.3, 8.9, 8.5, 8.2, 7.9, 7.6, 7.4, 7.2, 7.0], borderColor: '#3fb950', backgroundColor: 'rgba(63,185,80,0.1)', tension: 0.4, fill: true },
+      { label: 'Escenario Pesimista (inflación sube)', data: [10.5, 10.6, 10.8, 11.0, 11.2, 11.5, 11.8, 12.0, 12.2, 12.5, 12.7, 13.0], borderColor: '#f78166', backgroundColor: 'rgba(247,129,102,0.1)', tension: 0.4, fill: true }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { labels: { color: '#e6edf3' } }, tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.raw + '%' } } },
+    scales: {
+      x: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
+      y: { ticks: { color: '#8b949e', callback: v => v + '%' }, grid: { color: '#30363d' } }
+    }
+  }
+});
+
+// Tabla
+const tbody = document.getElementById('tablaBody');
+const sortedAll = [...entidades].sort((a, b) => b.tasa2026 - a.tasa2026);
+sortedAll.forEach((e, i) => {
+  const variacion = (e.tasa2026 - e.tasa2025).toFixed(2);
+  const varColor = variacion >= 0 ? '#3fb950' : '#f78166';
+  const varIcon = variacion >= 0 ? '▲' : '▼';
+  tbody.innerHTML += `<tr>
+    <td>${i + 1}</td>
+    <td>${e.nombre} ${i === 0 ? '<span class="badge best">🏆 Mejor</span>' : ''}${i === 1 ? '<span class="badge">2do</span>' : ''}</td>
+    <td>${e.tipo}</td>
+    <td>${e.tasa2025}%</td>
+    <td><strong>${e.tasa2026}%</strong></td>
+    <td style="color:${varColor}">${varIcon} ${Math.abs(variacion)}%</td>
+    <td>${e.plazo}</td>
+    <td>${e.monto}</td>
+  </tr>`;
+});
+
+// Simulación
+function calcularSimulacion() {
+  const monto = parseFloat(document.getElementById('montoInput').value) || 1000000;
+  const plazo = parseInt(document.getElementById('plazoSelect').value);
+  const anio = document.getElementById('anioSelect').value;
+  const tasaKey = anio === '2026' ? 'tasa2026' : 'tasa2025';
+
+  const resultados = [...entidades].sort((a, b) => b[tasaKey] - a[tasaKey]);
+  const maxGanancia = resultados[0];
+
+  const html = resultados.map((e, i) => {
+    const tasaEfectiva = Math.pow(1 + e[tasaKey] / 100, plazo / 365) - 1;
+    const ganancia = monto * tasaEfectiva;
+    const total = monto + ganancia;
+    const esMejor = i === 0;
+    return `<div class="sim-result-card ${esMejor ? 'best' : ''}">
+      ${esMejor ? '<div style="font-size:1.2rem;margin-bottom:4px">🏆</div>' : ''}
+      <div class="bank">${e.nombre}</div>
+      <div class="ganancia">+${ganancia.toLocaleString('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0})}</div>
+      <div class="total">Total: ${total.toLocaleString('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0})}</div>
+      <div class="rate">${e[tasaKey]}% E.A. • ${plazo} días</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('simResultados').innerHTML = html;
+}
+calcularSimulacion();
+</script>
+</body>
+</html>
