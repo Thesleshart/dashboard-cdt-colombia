@@ -96,6 +96,11 @@
 
   <div class="sim-box">
     <h3>💰 Simulador de Inversión — ¿Qué hubiera pasado con $1.000.000 COP?</h3>
+
+       <div class="chart-box full">
+              <h3>💰 Rentabilidad Histórica vs Inflación (2026) - ¿Qué hubiera pasado con $1.000.000?</h3>
+             <canvas id="chartRentabilidad" height="80"></canvas>canvas>
+       </div></h3>
     <div class="sim-controls">
       <div>
         <label>Monto a invertir (COP)</label>
@@ -365,7 +370,67 @@ new Chart(ctxProy, {
 // Tabla
 const tbody = document.getElementById('tablaBody');
 const sortedAll = [...entidades].sort((a, b) => b.tasa2026 - a.tasa2026);
-sortedAll.forEach((e, i) => {
+
+ // Rentabilidad vs Inflación (todas las entidades)
+ const inflacionAnual = 3.5; // Inflación promedio 2026 en Colombia
+ const topEntidades = [...entidades].sort((a, b) => b.tasa2026 - a.tasa2026).slice(0, 12);
+ const monto = 1000000;
+ const plazo = 365;
+
+ const rentabilidadData = topEntidades.map(e => {
+    const tasaEfectiva = Math.pow(1 + e.tasa2026 / 100, plazo / 365) - 1;
+    const ganancia = monto * tasaEfectiva;
+    const rendimientoReal = ((1 + tasaEfectiva) / (1 + inflacionAnual / 100) - 1) * 100;
+    return { entidad: e.nombre, ganancia, rendimientoReal };
+ });
+
+ const ctxRent = document.getElementById('chartRentabilidad').getContext('2d');
+ new Chart(ctxRent, {
+    type: 'bar',
+    data: {
+         labels: rentabilidadData.map(e => e.entidad),
+         datasets: [
+          {
+                   label: 'Ganancia Nominal ($)',
+                   data: rentabilidadData.map(e => e.ganancia),
+                   backgroundColor: 'rgba(88, 166, 255, 0.7)',
+                   borderColor: '#58a6ff',
+                   borderWidth: 1,
+                   yAxisID: 'y'
+          },
+          {
+                   label: 'Rendimiento Real vs Inflación (%)',
+                   data: rentabilidadData.map(e => e.rendimientoReal),
+                   backgroundColor: rentabilidadData.map(e => e.rendimientoReal > 0 ? 'rgba(63, 185, 80, 0.7)' : 'rgba(247, 129, 102, 0.7)'),
+                   borderColor: rentabilidadData.map(e => e.rendimientoReal > 0 ? '#3fb950' : '#f78166'),
+                   borderWidth: 1,
+                   yAxisID: 'y1'
+          }
+              ]
+    },
+    options: {
+         responsive: true,
+         interaction: { mode: 'index', intersect: false },
+         plugins: {
+                legend: { labels: { color: '#e6edf3' } },
+                tooltip: {
+                         callbacks: {
+                                    label: ctx => {
+                                                 if (ctx.yAxisID === 'y') return ctx.dataset.label + ': $' + Math.round(ctx.raw).toLocaleString('es-CO');
+                                                 return ctx.dataset.label + ': ' + ctx.raw.toFixed(2) + '%';
+                                    }
+                         }
+                }
+         },
+         scales: {
+                x: { ticks: { color: '#8b949e', maxRotation: 45 }, grid: { color: '#30363d' } },
+                y: { ticks: { color: '#8b949e', callback: v => '$' + (v / 1000).toFixed(0) + 'k' }, grid: { color: '#30363d' }, position: 'left' },
+                y1: { ticks: { color: '#8b949e', callback: v => v.toFixed(1) + '%' }, grid: { color: '#30363d' }, position: 'right' }
+         }
+    }
+ });
+ 
+ sortedAll.forEach((e, i) => {
   const variacion = (e.tasa2026 - e.tasa2025).toFixed(2);
   const varColor = variacion >= 0 ? '#3fb950' : '#f78166';
   const varIcon = variacion >= 0 ? '▲' : '▼';
