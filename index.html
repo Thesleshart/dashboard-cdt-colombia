@@ -371,96 +371,40 @@ new Chart(ctxProy, {
 const tbody = document.getElementById('tablaBody');
 const sortedAll = [...entidades].sort((a, b) => b.tasa2026 - a.tasa2026);
 
-// Proyección Histórica - Crecimiento de $1M (2020-2028)
- const años = ['2020', '2021', '2022', '2023', '2024', '2025', '2026', '2027', '2028'];
- const ctxRentabilidad = document.getElementById('chartRentabilidad').getContext('2d');
+ // Rentabilidad vs Inflación (todas las entidades)
+ const inflacionAnual = 3.5; // Inflación promedio 2026 en Colombia
+ const topEntidades = [...entidades].sort((a, b) => b.tasa2026 - a.tasa2026).slice(0, 12);
+ const monto = 1000000;
+ const plazo = 365;
 
- // Datos históricos y proyectados para top 6 entities
- const datosHistóricos = {
-    'JFK Cooperativa': [1180000, 1310000, 1460000, 1630000, 1820000, 2030000, 2260000, 2480000, 2730000],
-    'Cooperativa Coopcentral': [1150000, 1270000, 1410000, 1570000, 1750000, 1950000, 2160000, 2370000, 2600000],
-    'Coltefinanciera': [1140000, 1250000, 1390000, 1545000, 1720000, 1910000, 2120000, 2320000, 2550000],
-    'Confiar': [1130000, 1240000, 1375000, 1525000, 1700000, 1890000, 2090000, 2290000, 2510000],
-    'Cootrafa': [1120000, 1225000, 1355000, 1500000, 1670000, 1860000, 2050000, 2250000, 2470000],
-    'Banco W': [1100000, 1200000, 1330000, 1475000, 1640000, 1820000, 2020000, 2210000, 2430000]
- };
+ const rentabilidadData = topEntidades.map(e => {
+    const tasaEfectiva = Math.pow(1 + e.tasa2026 / 100, plazo / 365) - 1;
+    const ganancia = monto * tasaEfectiva;
+    const rendimientoReal = ((1 + tasaEfectiva) / (1 + inflacionAnual / 100) - 1) * 100;
+    return { entidad: e.nombre, ganancia, rendimientoReal };
+ });
 
- new Chart(ctxRentabilidad, {
-    type: 'line',
+ const ctxRent = document.getElementById('chartRentabilidad').getContext('2d');
+ new Chart(ctxRent, {
+    type: 'bar',
     data: {
-         labels: años,
+         labels: rentabilidadData.map(e => e.entidad),
          datasets: [
           {
-                   label: 'JFK Cooperativa (13% E.A.)',
-                   data: datosHistóricos['JFK Cooperativa'],
-                   borderColor: '#5a6fff',
-                   backgroundColor: 'rgba(90, 111, 255, 0.1)',
-                   fill: true,
-                   tension: 0.4,
-                   borderWidth: 2,
-                   pointRadius: 5,
-                   pointHoverRadius: 7,
-                   pointBackgroundColor: '#5a6fff'
+                   label: 'Ganancia Nominal ($)',
+                   data: rentabilidadData.map(e => e.ganancia),
+                   backgroundColor: 'rgba(88, 166, 255, 0.7)',
+                   borderColor: '#58a6ff',
+                   borderWidth: 1,
+                   yAxisID: 'y'
           },
           {
-                   label: 'Cooperativa Coopcentral (12.8% E.A.)',
-                   data: datosHistóricos['Cooperativa Coopcentral'],
-                   borderColor: '#00d4ff',
-                   backgroundColor: 'rgba(0, 212, 255, 0.1)',
-                   fill: true,
-                   tension: 0.4,
-                   borderWidth: 2,
-                   pointRadius: 5,
-                   pointHoverRadius: 7,
-                   pointBackgroundColor: '#00d4ff'
-          },
-          {
-                   label: 'Coltefinanciera (12.6% E.A.)',
-                   data: datosHistóricos['Coltefinanciera'],
-                   borderColor: '#00ff88',
-                   backgroundColor: 'rgba(0, 255, 136, 0.1)',
-                   fill: true,
-                   tension: 0.4,
-                   borderWidth: 2,
-                   pointRadius: 5,
-                   pointHoverRadius: 7,
-                   pointBackgroundColor: '#00ff88'
-          },
-          {
-                   label: 'Confiar (12.4% E.A.)',
-                   data: datosHistóricos['Confiar'],
-                   borderColor: '#ffaa00',
-                   backgroundColor: 'rgba(255, 170, 0, 0.1)',
-                   fill: true,
-                   tension: 0.4,
-                   borderWidth: 2,
-                   pointRadius: 5,
-                   pointHoverRadius: 7,
-                   pointBackgroundColor: '#ffaa00'
-          },
-          {
-                   label: 'Cootrafa (12.2% E.A.)',
-                   data: datosHistóricos['Cootrafa'],
-                   borderColor: '#ff6b6b',
-                   backgroundColor: 'rgba(255, 107, 107, 0.1)',
-                   fill: true,
-                   tension: 0.4,
-                   borderWidth: 2,
-                   pointRadius: 5,
-                   pointHoverRadius: 7,
-                   pointBackgroundColor: '#ff6b6b'
-          },
-          {
-                   label: 'Banco W (12% E.A.)',
-                   data: datosHistóricos['Banco W'],
-                   borderColor: '#9d4edd',
-                   backgroundColor: 'rgba(157, 78, 221, 0.1)',
-                   fill: true,
-                   tension: 0.4,
-                   borderWidth: 2,
-                   pointRadius: 5,
-                   pointHoverRadius: 7,
-                   pointBackgroundColor: '#9d4edd'
+                   label: 'Rendimiento Real vs Inflación (%)',
+                   data: rentabilidadData.map(e => e.rendimientoReal),
+                   backgroundColor: rentabilidadData.map(e => e.rendimientoReal > 0 ? 'rgba(63, 185, 80, 0.7)' : 'rgba(247, 129, 102, 0.7)'),
+                   borderColor: rentabilidadData.map(e => e.rendimientoReal > 0 ? '#3fb950' : '#f78166'),
+                   borderWidth: 1,
+                   yAxisID: 'y1'
           }
               ]
     },
@@ -471,20 +415,21 @@ const sortedAll = [...entidades].sort((a, b) => b.tasa2026 - a.tasa2026);
                 legend: { labels: { color: '#e6edf3' } },
                 tooltip: {
                          callbacks: {
-                                    label: (ctx) => ctx.dataset.label + ': ' + ctx.raw.toLocaleString('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0})
+                                    label: ctx => {
+                                                 if (ctx.yAxisID === 'y') return ctx.dataset.label + ': $' + Math.round(ctx.raw).toLocaleString('es-CO');
+                                                 return ctx.dataset.label + ': ' + ctx.raw.toFixed(2) + '%';
+                                    }
                          }
                 }
          },
          scales: {
-                y: {
-                         ticks: { color: '#8b949e' },
-                         grid: { color: '#30363d' },
-                         title: { display: true, text: 'Valor en COP ($)', color: '#e6edf3' }
-                },
-                x: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } }
+                x: { ticks: { color: '#8b949e', maxRotation: 45 }, grid: { color: '#30363d' } },
+                y: { ticks: { color: '#8b949e', callback: v => '$' + (v / 1000).toFixed(0) + 'k' }, grid: { color: '#30363d' }, position: 'left' },
+                y1: { ticks: { color: '#8b949e', callback: v => v.toFixed(1) + '%' }, grid: { color: '#30363d' }, position: 'right' }
          }
     }
  });
+ 
  sortedAll.forEach((e, i) => {
   const variacion = (e.tasa2026 - e.tasa2025).toFixed(2);
   const varColor = variacion >= 0 ? '#3fb950' : '#f78166';
@@ -514,7 +459,7 @@ function calcularSimulacion() {
   const html = resultados.map((e, i) => {
     const tasaEfectiva = Math.pow(1 + e[tasaKey] / 100, plazo / 365) - 1;
     const ganancia = monto * tasaEfectiva;
-    const total = monto + ganancia;h
+    const total = monto + ganancia;
     const esMejor = i === 0;
     return `<div class="sim-result-card ${esMejor ? 'best' : ''}">
       ${esMejor ? '<div style="font-size:1.2rem;margin-bottom:4px">🏆</div>' : ''}
