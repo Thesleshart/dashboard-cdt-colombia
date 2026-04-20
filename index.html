@@ -47,6 +47,10 @@
   .badge { background: #0d6efd; color: #fff; border-radius: 4px; padding: 2px 8px; font-size: 0.75rem; }
   .badge.best { background: #f78166; }
   .nota { background: #1c2128; border-left: 3px solid #58a6ff; padding: 12px 16px; border-radius: 4px; font-size: 0.82rem; color: #8b949e; margin-bottom: 20px; }
+  .conclusion-box { background: linear-gradient(135deg, #1a3a3a 0%, #0d4e4e 100%); border: 1px solid #30363d; border-radius: 12px; padding: 28px; margin-bottom: 28px; }
+  .conclusion-box h2 { color: #3fb950; font-size: 1.4rem; margin-bottom: 16px; }
+  .conclusion-box p { color: #e6edf3; font-size: 0.95rem; line-height: 1.6; margin-bottom: 12px; text-align: justify; }
+  .conclusion-box strong { color: #58a6ff; }
   footer { text-align: center; padding: 20px; color: #8b949e; font-size: 0.8rem; border-top: 1px solid #30363d; }
   @media (max-width: 768px) { .charts-grid { grid-template-columns: 1fr; } .charts-grid .chart-box.full { grid-column: 1; } }
 </style>
@@ -130,6 +134,21 @@
       </thead>
       <tbody id="tablaBody"></tbody>
     </table>
+  </div>
+
+  <div class="conclusion-box">
+    <h2>🎯 CONCLUSIONES Y RECOMENDACIONES</h2>
+    <p><strong>1. Reducción General de Tasas (2025 → 2026):</strong> La tasa promedio bajó de 12.38% a 10.89% E.A., reflejando una menor volatilidad en el mercado y estabilización de tasas de política monetaria del Banco de la República.</p>
+    
+    <p><strong>2. Mejores Oportunidades 2026:</strong> Las <strong>cooperativas</strong> (JFK, Confiar, Cootrafa) y <strong>CFC</strong> (Financiera Dann, Coltefinanciera) mantienen tasas competitivas (12-13% E.A.), superiores a bancos tradicionales (9-10% E.A.). Son opciones viables para quien busque mayor rentabilidad, considerando el riesgo de crédito.</p>
+    
+    <p><strong>3. Banca Digital en Ascenso:</strong> Plataformas como <strong>Lulo Bank</strong> (11.5% E.A.), <strong>Nubank</strong> (10.8% E.A.) y <strong>Rappibank</strong> (11.2% E.A.) ofrecen tasas competitivas con menor fricción (depósitos desde $1.000), democratizando el acceso a CDT.</p>
+    
+    <p><strong>4. Impacto en Inversiones Grandes:</strong> Con $1.000.000 COP a 360 días, la diferencia entre la mejor opción (JFK: +$128.110) y la peor (Itaú: +$91.000) es de <strong>$37.110 COP</strong>. Elegir bien la entidad genera diferencias tangibles.</p>
+    
+    <p><strong>5. Proyección 2026-2027:</strong> El escenario más probable es la <strong>continuación de la tendencia bajista</strong> (Base), con tasas cayendo de 10.5% (Abr 2026) a 8.3% (Mar 2027). Esto sugiere que invertir en CDT <strong>ahora es mejor que esperar</strong> para obtener mejores tasas.</p>
+    
+    <p><strong>🚨 RECOMENDACIÓN FINAL:</strong> Para maximizar rentabilidad en 2026-2027, considera: (a) Invertir ahora antes de que tasas bajen más, (b) Diversificar entre 2-3 entidades (cooperativas + digital + banco tradicional) para balancear riesgo y retorno, (c) Buscar CDTs escalonados (30, 90, 180, 360 días) para aprovechar reinversiones en tasas futuras.</p>
   </div>
 </div>
 
@@ -236,7 +255,7 @@ new Chart(ctxPie, {
   }
 });
 
-// Proyección chart
+// PROYECCIÓN con TOOLTIPS MEJORADOS - Mostrar 3 líneas simultáneamente
 const meses = ['Abr 2026','May 2026','Jun 2026','Jul 2026','Ago 2026','Sep 2026','Oct 2026','Nov 2026','Dic 2026','Ene 2027','Feb 2027','Mar 2027'];
 const ctxProy = document.getElementById('chartProyeccion').getContext('2d');
 new Chart(ctxProy, {
@@ -251,7 +270,40 @@ new Chart(ctxProy, {
   },
   options: {
     responsive: true,
-    plugins: { legend: { labels: { color: '#e6edf3' } }, tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.raw + '%' } } },
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { labels: { color: '#e6edf3' } },
+      tooltip: {
+        mode: 'index',
+        intersect: false,
+        backgroundColor: 'rgba(10, 20, 30, 0.95)',
+        titleColor: '#58a6ff',
+        bodyColor: '#e6edf3',
+        borderColor: '#30363d',
+        borderWidth: 1,
+        padding: 12,
+        displayColors: true,
+        callbacks: {
+          title: function(context) {
+            return '📅 ' + context[0].label;
+          },
+          label: function(context) {
+            const colors = ['🔵 Base:', '🟢 Optimista:', '🔴 Pesimista:'];
+            return colors[context.datasetIndex] + ' ' + context.raw.toFixed(2) + '% E.A.';
+          },
+          afterLabel: function(context) {
+            if (context.datasetIndex === 0) {
+              return '(escenario más probable)';
+            }
+            return '';
+          },
+          footer: function(items) {
+            const dif = items[2].raw - items[1].raw;
+            return '\n📊 Diferencia pesimista-optimista: ' + dif.toFixed(2) + ' puntos';
+          }
+        }
+      }
+    },
     scales: {
       x: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
       y: { ticks: { color: '#8b949e', callback: v => v + '%' }, grid: { color: '#30363d' } }
